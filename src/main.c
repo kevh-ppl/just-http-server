@@ -38,10 +38,10 @@ int main()
     //  i need a loop right here and maybe use select syscall; turn out i'm using poll
 
     int theres_new_conn;
-    nfds_t num_open_fds, total_nfds;
+    nfds_t total_nfds;
     struct pollfd *pfds;
 
-    num_open_fds = total_nfds = 1;
+    total_nfds = 1;
     // gotta make an array for fds
     pfds = calloc(total_nfds, sizeof(struct pollfd));
     if (pfds == NULL)
@@ -74,6 +74,11 @@ int main()
         };
 
         value_read = read(client_conn, buffer_stream, 1024 - 1); //-1 because EOF
+        if (value_read == -1)
+        {
+            print_and_keep_going("Server", "Error reading client request");
+            continue;
+        }
 
         char *hello = "Hi, this thing works!\n";
         send(client_conn, hello, strlen(hello), 0);
