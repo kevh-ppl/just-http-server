@@ -1,0 +1,18 @@
+{
+  "configurations": [
+    {
+      "name": "just-http-server",
+      "includePath": [
+        "${workspaceFolder}",
+        "${workspaceFolder}/include",
+        "/usr/include/",
+        "/usr/local/include"
+      ],
+      "defines": [],
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu99",
+      "intelliSenseMode": "linux-gcc-x64"
+    }
+  ],
+  "version": 4
+}
