@@ -5,6 +5,7 @@
 #include <poll.h>   //instead of select()
 #include <sys/socket.h>
 
+#include "parser.h"
 #include "utils.h"
 #include "server.h"
 
@@ -54,6 +55,7 @@ int main()
 
     while (1)
     {
+        memset(buffer_stream, 0, sizeof(buffer_stream));
         theres_new_conn = poll(pfds, total_nfds, -1);
         if (theres_new_conn == -1)
         {
@@ -79,6 +81,10 @@ int main()
             print_and_keep_going("Server", "Error reading client request");
             continue;
         }
+
+        printf("Client request:\n");
+        printf("%s\n", buffer_stream);
+        tokenization_by_crlf(buffer_stream, strlen(buffer_stream));
 
         char *hello = "Hi, this thing works!\n";
         send(client_conn, hello, strlen(hello), 0);

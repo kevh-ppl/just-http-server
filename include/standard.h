@@ -1,8 +1,9 @@
 #ifndef STANDARD_H
 #define STANDARD_H
 
-#define CR "\t"
+#define CR "\r"
 #define LF "\n"
+#define CRLF "\r\n"
 #define SP " "
 
 /*
