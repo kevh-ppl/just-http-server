@@ -37,3 +37,27 @@ void print_and_keep_going(const char *entity, const char *format, ...)
         va_end(args);
     }
 }
+
+void do_fork()
+{
+    switch (fork()) // Create child process with unique PID and GID (parent ID is parent PID, server PID)
+    {
+    case -1:
+        print_and_keep_going("Server", "Error creating child process to handle request");
+    case 0:
+        break; // child process
+    default:
+        _exit(EXIT_SUCCESS);
+    }
+
+    // At this point we are executing as the child process
+}
+
+void kill_child()
+{
+    // with_exit() does weird stuff
+    // prints cli prompt between requests
+    // may be because _exit() does not clean output streams,
+    // just fd that belongs to the process being terminated
+    exit(EXIT_SUCCESS);
+}
