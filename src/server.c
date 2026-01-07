@@ -67,7 +67,11 @@ int setup_server(server_ctx *server)
 
 void handle_child(int server_fd, server_ctx *server)
 {
-    do_fork();
+    pid_t pid = fork();
+    if (pid > 0)
+    {
+        return;
+    }
 
     // handle client connection
     ssize_t value_read;

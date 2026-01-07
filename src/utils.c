@@ -3,6 +3,8 @@
 #include <string.h> //strlen
 #include <unistd.h> //_error
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 void abort_server(const char *entity, const char *format, ...)
 {
@@ -38,17 +40,15 @@ void print_and_keep_going(const char *entity, const char *format, ...)
     }
 }
 
-void do_fork()
+pid_t do_fork()
 {
-    switch (fork()) // Create child process with unique PID and GID (parent ID is parent PID, server PID)
+    pid_t pid = fork();
+    if (pid == -1)
     {
-    case -1:
-        print_and_keep_going("Server", "Error creating child process to handle request");
-    case 0:
-        break; // child process
-    default:
-        _exit(EXIT_SUCCESS);
+        abort_server("Server", "Error creating child to process request");
     }
+
+    return pid;
 
     // At this point we are executing as the child process
 }
