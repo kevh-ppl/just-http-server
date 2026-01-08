@@ -27,6 +27,13 @@ int setup_server(server_ctx *server)
     server->addr_len = sizeof(*server->address);
     int opt = 1;
 
+    /*
+    Using SOCK_NONBLOCK flag for socket because I'm already using
+    the syscall poll to handle socket events
+    */
+   /*
+   I tried using SOCK_NONBLOCK but it fucked up something
+   */
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) // using SOCL_STREAM sets up our server to go with TCP
     {
         print_and_keep_going("Server", "socket failed");
@@ -75,30 +82,32 @@ void handle_child(int server_fd, server_ctx *server)
 
     // handle client connection
     ssize_t value_read;
-    char buffer_stream[1024] = {0};
+    char buffer_stream[BUFFER_LENGTH] = {0};
     int client_conn;
 
     // well, I undertand (may be wrong) that accept() waits for a conn, creates a new socket if there's any
     // and then returns a fd to that new socket to communicate to the client.
     if ((client_conn = accept(server_fd, (struct sockaddr *)server->address, &server->addr_len)) < 0)
     {
-        print_and_keep_going("Server child", "Error accepting connection...%s");
+        print_and_keep_going("Server child", "Error accepting connection...\n");
+        return;
     };
 
-    value_read = read(client_conn, buffer_stream, 1024 - 1); //-1 because EOF
+    value_read = read(client_conn, buffer_stream, BUFFER_LENGTH - 1); //-1 because EOF
+
     if (value_read == -1)
     {
-        print_and_keep_going("Server child", "Error reading client request");
+        print_and_keep_going("Server child", "Error reading client request...\n");
         return;
     }
 
     printf("Client request:\n");
-    printf("%s\n", buffer_stream);
     tokenization_by_crlf(buffer_stream, strlen(buffer_stream));
 
     char *hello = "Hi, this thing works!\n";
     send(client_conn, hello, strlen(hello), 0);
     printf("Msg sent\n");
+    printf("=============================================\n");
 
     close(client_conn);
     kill_child();

@@ -55,13 +55,16 @@ int main()
             // theres an error on poll, can't recover
             abort_server("Server", "Error during poll");
         }
-        else if (pfds->revents == 0) // no revents for any fds
+        else if (pfds->revents & POLLIN)
         {
-            continue;
+            /*
+            I didn't read well Linux Man Page about poll and pollfd
+            I wasn't using bitwise AND operator and instead
+            I was comparing with normal int values (pdfs->revents == 0)
+            */
+            // now i can handle the connection
+            handle_child(server_fd, &server);
         }
-        
-        // now i can handle the connection
-        handle_child(server_fd, &server);
     }
 
     close(server_fd);

@@ -30,7 +30,7 @@ void print_and_keep_going(const char *entity, const char *format, ...)
     if (format && *format && entity && *entity)
     {
         va_start(args, format);
-        fprintf(stderr, "%s: ", entity);
+        fprintf(stderr, "%s: \n\t", entity);
         vfprintf(stderr, format, args);
         size_t len = strlen(format);
         if (format[len - 1] != '\n')
