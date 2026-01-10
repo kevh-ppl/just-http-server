@@ -6,6 +6,9 @@
 #define CRLF "\r\n"
 #define SP " "
 
+#define GET "GET"
+#define POST "POST"
+
 /*
 The pieces of informations in this file quoted as comments are from
 the RFC's 2616, 7231, 9110

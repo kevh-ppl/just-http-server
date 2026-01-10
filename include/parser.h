@@ -7,6 +7,6 @@ typedef struct header_token
     char value[50];
 } header_token;
 
-void tokenization_by_crlf(const char *request, size_t req_str_len);
+void tokenization_by_crlf(const char *request, size_t req_str_len, char *lines[], int maxTokens);
 
 #endif

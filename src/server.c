@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include "standard.h"
 #include "parser.h"
 #include "utils.h"
 #include "server.h"
@@ -31,9 +32,9 @@ int setup_server(server_ctx *server)
     Using SOCK_NONBLOCK flag for socket because I'm already using
     the syscall poll to handle socket events
     */
-   /*
-   I tried using SOCK_NONBLOCK but it fucked up something
-   */
+    /*
+    I tried using SOCK_NONBLOCK but it fucked up something
+    */
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) // using SOCL_STREAM sets up our server to go with TCP
     {
         print_and_keep_going("Server", "socket failed");
@@ -72,6 +73,63 @@ int setup_server(server_ctx *server)
     return server_fd;
 }
 
+int handle_get(char *response, char *lines[], char *resource, char *http_version)
+{
+    if (resource == NULL || http_version == NULL)
+    {
+        print_and_keep_going("Server", "Either resource or http version not provided");
+        return -1;
+    }
+    printf("Handling GET request with %s and %s\n", resource, http_version);
+    return 0;
+}
+
+int handle_request_method(char *response, char *lines[])
+{
+
+    if (lines[0] == NULL)
+    {
+        print_and_keep_going("Server", "Handle request");
+        return -1;
+    }
+
+    printf("lines[0]: %s\n", lines[0]);
+    // function pointer to execute corresponding handler
+    int (*fnptr)(char *response, char *lines[], char *resource, char *http_version);
+
+    // create duplicate of first line
+    //(strtok operates on the same string)
+    size_t fllenght = strlen(lines[0]);
+    char *first_line = (char *)malloc(fllenght + 1);
+    if (first_line == NULL)
+    {
+        print_and_keep_going("Server", "Handle request");
+        return -1;
+    }
+    memcpy(first_line, lines[0], fllenght + 1);
+    printf("first_line: %s\n", first_line);
+
+    char *token = strtok(first_line, SP);
+
+    /*
+    need a function pointer to the right handle_method function
+    */
+
+    printf("token: %s\n", token);
+    if (strcmp(token, GET) == 0)
+    {
+        // GET Method
+        fnptr = handle_get;
+    }
+
+    char *resource = strtok(NULL, SP);
+    char *http_version = strtok(NULL, SP);
+    int whappend = fnptr(response, lines, resource, http_version);
+    free(first_line);
+
+    return whappend;
+}
+
 void handle_child(int server_fd, server_ctx *server)
 {
     pid_t pid = fork();
@@ -102,7 +160,13 @@ void handle_child(int server_fd, server_ctx *server)
     }
 
     printf("Client request:\n");
-    tokenization_by_crlf(buffer_stream, strlen(buffer_stream));
+    char *lines[MAX_TOKEN_LINES_REQUEST] = {0};
+    tokenization_by_crlf(buffer_stream, strlen(buffer_stream), lines, MAX_TOKEN_LINES_REQUEST);
+
+    printf("lines[0] in handle_child(): %s\n", lines[0]);
+
+    char response[BUFFER_LENGTH];
+    handle_request_method(response, lines); // gotta pass size of array
 
     char *hello = "Hi, this thing works!\n";
     send(client_conn, hello, strlen(hello), 0);

@@ -4,7 +4,7 @@
 
 #include "standard.h"
 
-void tokenization_by_crlf(const char *request, size_t req_str_len)
+void tokenization_by_crlf(const char *request, size_t req_str_len, char *lines[], int maxTokens)
 {
 
     char request_cpy[1024] = {0};
@@ -12,9 +12,16 @@ void tokenization_by_crlf(const char *request, size_t req_str_len)
     memcpy(request_cpy, request, nbytes_to_cpy);
 
     char *token = strtok(request_cpy, CRLF);
-    while (token != NULL)
+    int index = 0;
+    while (token != NULL && index < maxTokens - 1) // -1 because gotta do a on purpose NULL pointer at the end
     {
-        printf("Line: %s\n", token++);
+        if (strcmp(token, CRLF) == 0) // ignore body for now
+            break;
+
+        lines[index] = token;
+        index++;
         token = strtok(NULL, CRLF);
     }
+    lines[index] = NULL;
+    printf("First line of request:\n\t%s\n", lines[0]);
 }
