@@ -9,6 +9,17 @@
 #define GET "GET"
 #define POST "POST"
 
+#define CODE_OK "200"
+#define STATUS_OK "OK"
+
+// headers
+#define KEY_CONTENT_TYPE "Content-Type:"
+#define KEY_CONTENT_LENGHT "Content-Length:"
+#define KEY_SERVER "Server:"
+
+// content-types
+#define VALUE_CONTENT_TYPE_TEXT "text/"
+
 /*
 The pieces of informations in this file quoted as comments are from
 the RFC's 2616, 7231, 9110
@@ -43,12 +54,14 @@ generic-message = start-line
 */
 
 /*
-Response      = Status-Line               ; Section 6.1
+Response      =        Status-Line               ; Section 6.1
                        *(( general-header        ; Section 4.5
                         | response-header        ; Section 6.2
                         | entity-header ) CRLF)  ; Section 7.1
                        CRLF
                        [ message-body ]          ; Section 7.2
+
+Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
 
 response-header = Accept-Ranges           ; Section 14.5
                        | Age                     ; Section 14.6
