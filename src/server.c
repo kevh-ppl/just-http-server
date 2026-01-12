@@ -19,7 +19,7 @@
 static int handle_get(request_ctx *req_ctx);
 static handler_method_fn handlers[] = {
     [GET] = handle_get,
-    [UNKNOW] = NULL,
+    [UNKNOWN] = NULL,
 };
 
 /*
@@ -200,22 +200,25 @@ static int handle_get(request_ctx *req_ctx)
     return 0;
 }
 
-static HTTP_Method get_method_handler(const char *http_method)
+static httpmethod get_method_handler(const char *httpmethod)
 {
-    if (strcmp(http_method, "GET") == 0)
+    if (strcmp(httpmethod, "GET") == 0)
         return GET;
-    return UNKNOW;
+    return UNKNOWN;
 }
 
-static int handle_method(HTTP_Method method, request_ctx *req_ctx)
+static int handle_method(httpmethod method, request_ctx *req_ctx)
 {
-    if (method < UNKNOW)
+    if (method < UNKNOWN)
     {
         handlers[method](req_ctx);
     }
     return -1;
 }
 
+/*
+TODO: Use struct request_parsed instead of **lines
+*/
 static int handle_request(char *response, char *lines[])
 {
 
@@ -245,7 +248,7 @@ static int handle_request(char *response, char *lines[])
     need a function pointer to the right handle_method function
     */
 
-    HTTP_Method method = get_method_handler(token);
+    httpmethod method = get_method_handler(token);
 
     request_ctx req_ctx;
     req_ctx.response = response;
@@ -282,6 +285,7 @@ void handle_child(int server_fd, server_ctx *server)
         return;
     };
 
+    // TODO: use shutdown()-drain-close() technique
     value_read = read(client_conn, buffer_stream, BUFFER_LENGTH - 1); //-1 because EOF
 
     if (value_read == -1)
@@ -290,13 +294,20 @@ void handle_child(int server_fd, server_ctx *server)
         return;
     }
 
-    printf("Client request:\n");
-    char *lines[MAX_TOKEN_LINES_REQUEST] = {0};
-    tokenization_by_crlf(buffer_stream, strlen(buffer_stream), lines, MAX_TOKEN_LINES_REQUEST);
+    // printf("Client request:\n");
+    // char *lines[MAX_HEADERS_LINES_REQUEST] = {0};
+    // tokenization_by_crlf(buffer_stream, strlen(buffer_stream), lines, MAX_HEADERS_LINES_REQUEST);
+    // printf("lines[0] in handle_child(): %s\n", lines[0]);
 
-    printf("lines[0] in handle_child(): %s\n", lines[0]);
+    printf("Using other tokenizer function:\n");
+    request_parsed req_parsed;
+    parse_request(buffer_stream, strlen(buffer_stream), &req_parsed);
+    printf("req_parsed->request_line: %s\n", req_parsed.request_line);
+    printf("req_parsed->body: %s\n", req_parsed.body);
 
     char response[BUFFER_LENGTH];
+
+    // TODO: Use struct request_parsed instead of **lines
     handle_request(response, lines); // gotta pass size of array
 
     send(client_conn, response, sizeof response, 0);

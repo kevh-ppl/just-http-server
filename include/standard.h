@@ -12,8 +12,8 @@
 typedef enum
 {
         GET,
-        UNKNOW
-} HTTP_Method;
+        UNKNOWN
+} httpmethod;
 
 #define CODE_OK "200"
 #define STATUS_OK "OK"

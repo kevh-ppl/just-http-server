@@ -4,8 +4,6 @@
 #define BUFFER_LENGTH 8192
 #define SERVER_PORT 1313
 
-#define MAX_TOKEN_LINES_REQUEST 50
-
 #define HTTP_VERSION "HTTP/1.1"
 #define BASE_PATH_WWW "./www"
 #define LEN_BASE_PATH_WWW strlen(BASE_PATH_WWW)
