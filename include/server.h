@@ -1,7 +1,7 @@
 #ifndef SERVER_h
 #define SERVER_H
 
-#define BUFFER_LENGTH 4096
+#define BUFFER_LENGTH 8192
 #define SERVER_PORT 1313
 
 #define MAX_TOKEN_LINES_REQUEST 50
@@ -14,5 +14,14 @@
 
 int setup_server(server_ctx *server);
 void handle_child(int server_fd, server_ctx *server);
+
+typedef struct request_ctx
+{
+    char *response;
+    char *resource;
+    char *http_version;
+    char *lines[];
+} request_ctx;
+typedef int (*handler_method_fn)(request_ctx *req_ctx);
 
 #endif

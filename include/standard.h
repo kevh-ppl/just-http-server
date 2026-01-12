@@ -6,8 +6,14 @@
 #define CRLF "\r\n"
 #define SP " "
 
-#define GET "GET"
+// #define GET "GET"
 #define POST "POST"
+
+typedef enum
+{
+        GET,
+        UNKNOW
+} HTTP_Method;
 
 #define CODE_OK "200"
 #define STATUS_OK "OK"
