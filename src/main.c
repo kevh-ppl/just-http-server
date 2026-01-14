@@ -67,5 +67,6 @@ int main()
         }
     }
 
+    free(server.address);
     close(server_fd);
 }

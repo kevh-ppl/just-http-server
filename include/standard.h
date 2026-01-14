@@ -6,13 +6,13 @@
 #define CRLF "\r\n"
 #define SP " "
 
-// #define GET "GET"
+#define GET "GET"
 #define POST "POST"
 
 typedef enum
 {
-        GET,
-        UNKNOWN
+        GET_EN,
+        UNKNOWN_EN
 } httpmethod;
 
 #define CODE_OK "200"

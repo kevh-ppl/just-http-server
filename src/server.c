@@ -18,8 +18,8 @@
 
 static int handle_get(char *response, request_parsed *req_p);
 static handler_method_fn handlers[] = {
-    [GET] = handle_get,
-    [UNKNOWN] = NULL,
+    [GET_EN] = handle_get,
+    [UNKNOWN_EN] = NULL,
 };
 
 /*
@@ -89,7 +89,7 @@ static int handle_get(char *response, request_parsed *req_p)
         print_and_keep_going("Server", "Either resource or http version not provided");
         return -1;
     }
-    printf("Handling GET request with %s and %s\n", req_p->resource, req_p->http_version);
+    // printf("Handling GET request with %s and %s\n", req_p->resource, req_p->http_version);
 
     /*
     first i gotta check for the resource
@@ -129,7 +129,7 @@ static int handle_get(char *response, request_parsed *req_p)
         snprintf(path_to_resource, len_path, "%s%s", BASE_PATH_WWW, req_p->resource);
     }
 
-    printf("path_ro_resource: %s\n", path_to_resource);
+    // printf("path_ro_resource: %s\n", path_to_resource);
 
     struct stat stbuf;
     if (stat(path_to_resource, &stbuf) == -1)
@@ -151,23 +151,23 @@ static int handle_get(char *response, request_parsed *req_p)
     }
 
     char *body = (char *)malloc((int64_t)stbuf.st_size);
-    printf("st_size: %" PRId64 "\n", stbuf.st_size);
+    // printf("st_size: %" PRId64 "\n", stbuf.st_size);
     if (body == NULL)
     {
         print_and_keep_going("Server", "Error allocating memory for body response");
         return -1;
     }
 
-    int nbytes_body = read(fd_resource, body, BUFFER_LENGTH);
+    int nbytes_body = read(fd_resource, body, (int64_t)stbuf.st_size);
     if (nbytes_body == -1)
     {
         print_and_keep_going("Server", "Error reading resource");
         return -1;
     }
 
-    printf("nbytes_read: %d\n", nbytes_body);
-    // at this point i can assamble the response with status 200
-    // Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+    // printf("nbytes_read: %d\n", nbytes_body);
+    //  at this point i can assamble the response with status 200
+    //  Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
 
     int offset;
     offset = snprintf(response, BUFFER_LENGTH, "%s", HTTP_VERSION);
@@ -197,14 +197,19 @@ static int handle_get(char *response, request_parsed *req_p)
     offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", body);
     response[offset + 1] = '\0';
 
+    free(path_to_resource);
+    free(body);
     return 0;
 }
 
-static httpmethod get_method_handler(const char *httpmethod)
+static httpmethod get_method_handler(char *httpmethod)
 {
-    if (strcmp(httpmethod, "GET") == 0)
-        return GET;
-    return UNKNOWN;
+    ////printf("Coco de aa: %s\n", httpmethod);
+    if (httpmethod == NULL)
+        return UNKNOWN_EN; // 501 Not Inplemented
+    if (strcmp(httpmethod, GET) == 0)
+        return GET_EN;
+    return UNKNOWN_EN; // 501 Not Inplemented
 }
 
 static int handle_method(char *response, request_parsed *req_p)
@@ -213,7 +218,7 @@ static int handle_method(char *response, request_parsed *req_p)
     need a function pointer to the right handle_method function
     */
     httpmethod method = get_method_handler(req_p->method);
-    if (method < UNKNOWN)
+    if (method < UNKNOWN_EN)
     {
         handlers[method](response, req_p);
     }
@@ -228,6 +233,19 @@ static int handle_request(char *response, request_parsed *req_parsed)
         return -1;
     }
     return handle_method(response, req_parsed);
+}
+
+static void init_request_parsed(request_parsed *req_p)
+{
+    req_p->method = NULL;
+    req_p->resource = NULL;
+    req_p->http_version = NULL;
+    req_p->body = NULL;
+
+    for (int i = 0; i < MAX_HEADERS_LINES_REQUEST; i++)
+    {
+        req_p->headers[i] = NULL;
+    }
 }
 
 void handle_child(int server_fd, server_ctx *server)
@@ -260,15 +278,14 @@ void handle_child(int server_fd, server_ctx *server)
         return;
     }
 
-    // printf("Client request:\n");
-    // char *lines[MAX_HEADERS_LINES_REQUEST] = {0};
-    // tokenization_by_crlf(buffer_stream, strlen(buffer_stream), lines, MAX_HEADERS_LINES_REQUEST);
-    // printf("lines[0] in handle_child(): %s\n", lines[0]);
+    // //printf("Client request:\n");
+    // //printf("lines[0] in handle_child(): %s\n", lines[0]);
 
-    printf("Using other tokenizer function:\n");
+    // printf("Using other tokenizer function:\n");
     request_parsed req_parsed;
+    init_request_parsed(&req_parsed);
     parse_request(buffer_stream, strlen(buffer_stream), &req_parsed);
-    printf("req_parsed->body: %s\n", req_parsed.body);
+    // printf("req_parsed->body: %s\n", req_parsed.body);
 
     char response[BUFFER_LENGTH];
 
@@ -276,8 +293,8 @@ void handle_child(int server_fd, server_ctx *server)
     handle_request(response, &req_parsed);
 
     send(client_conn, response, sizeof response, 0);
-    printf("Msg sent\n");
-    printf("=============================================\n");
+    // printf("Msg sent\n");
+    // printf("=============================================\n");
 
     close(client_conn);
     kill_child();
