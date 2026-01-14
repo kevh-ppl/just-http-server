@@ -34,8 +34,16 @@ void parse_request(const char *request, size_t req_str_len, request_parsed *req_
     ssize_t nbytes_to_cpy = req_str_len < sizeof(request_cpy) - 1 ? req_str_len : sizeof(req_str_len) - 1;
     memcpy(request_cpy, request, nbytes_to_cpy);
 
+    char *first_line_token = strtok(request_cpy, SP);
+    req_parsed->method = first_line_token;
+    first_line_token = strtok(NULL, SP);
+    req_parsed->resource = first_line_token;
+    first_line_token = strtok(NULL, SP);
+    req_parsed->http_version = first_line_token;
+
     char *token = strtok(request_cpy, CRLF);
-    req_parsed->request_line = token;
+    token = strtok(NULL, CRLF);
+
     int index = 0;
     while (token != NULL && index < MAX_HEADERS_LINES_REQUEST - 1) // -1 because gotta do a on purpose NULL pointer at the end
     {

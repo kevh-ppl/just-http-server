@@ -16,7 +16,7 @@
 
 // #include <winsock2.h> // for Windows
 
-static int handle_get(request_ctx *req_ctx);
+static int handle_get(char *response, request_parsed *req_p);
 static handler_method_fn handlers[] = {
     [GET] = handle_get,
     [UNKNOWN] = NULL,
@@ -82,14 +82,14 @@ int setup_server(server_ctx *server)
     return server_fd;
 }
 
-static int handle_get(request_ctx *req_ctx)
+static int handle_get(char *response, request_parsed *req_p)
 {
-    if (req_ctx->resource == NULL || req_ctx->http_version == NULL)
+    if (req_p->resource == NULL || req_p->http_version == NULL)
     {
         print_and_keep_going("Server", "Either resource or http version not provided");
         return -1;
     }
-    printf("Handling GET request with %s and %s\n", req_ctx->resource, req_ctx->http_version);
+    printf("Handling GET request with %s and %s\n", req_p->resource, req_p->http_version);
 
     /*
     first i gotta check for the resource
@@ -104,9 +104,9 @@ static int handle_get(request_ctx *req_ctx)
     */
 
     char *path_to_resource;
-    if (strcmp(req_ctx->resource, "/") == 0)
+    if (strcmp(req_p->resource, "/") == 0)
     {
-        int len_path = LEN_BASE_PATH_WWW + strlen(req_ctx->resource) + LEN_INDEX_FILE + 1;
+        int len_path = LEN_BASE_PATH_WWW + strlen(req_p->resource) + LEN_INDEX_FILE + 1;
         path_to_resource = (char *)malloc(len_path);
         if (path_to_resource == NULL)
         {
@@ -114,11 +114,11 @@ static int handle_get(request_ctx *req_ctx)
             return -1;
         }
         memcpy(path_to_resource, BASE_PATH_WWW, LEN_BASE_PATH_WWW);
-        snprintf(path_to_resource, len_path, "%s%s%s", BASE_PATH_WWW, req_ctx->resource, INDEX_FILE);
+        snprintf(path_to_resource, len_path, "%s%s%s", BASE_PATH_WWW, req_p->resource, INDEX_FILE);
     }
     else
     {
-        int len_path = LEN_BASE_PATH_WWW + strlen(req_ctx->resource) + 1;
+        int len_path = LEN_BASE_PATH_WWW + strlen(req_p->resource) + 1;
         path_to_resource = (char *)malloc(len_path);
         if (path_to_resource == NULL)
         {
@@ -126,7 +126,7 @@ static int handle_get(request_ctx *req_ctx)
             return -1;
         }
         memcpy(path_to_resource, BASE_PATH_WWW, LEN_BASE_PATH_WWW);
-        snprintf(path_to_resource, len_path, "%s%s", BASE_PATH_WWW, req_ctx->resource);
+        snprintf(path_to_resource, len_path, "%s%s", BASE_PATH_WWW, req_p->resource);
     }
 
     printf("path_ro_resource: %s\n", path_to_resource);
@@ -170,32 +170,32 @@ static int handle_get(request_ctx *req_ctx)
     // Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
 
     int offset;
-    offset = snprintf(req_ctx->response, BUFFER_LENGTH, "%s", HTTP_VERSION);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", SP);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", CODE_OK);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", SP);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", STATUS_OK);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
+    offset = snprintf(response, BUFFER_LENGTH, "%s", HTTP_VERSION);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", SP);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", CODE_OK);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", SP);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", STATUS_OK);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
 
     // headers
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", KEY_CONTENT_TYPE);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", SP);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", VALUE_CONTENT_TYPE_TEXT);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", "html; charset=utf-8");
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", KEY_CONTENT_LENGHT);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", SP);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%d", nbytes_body);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", KEY_SERVER);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", SP);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", "Juanito Tribalero Trakatero Chebichev");
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", KEY_CONTENT_TYPE);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", SP);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", VALUE_CONTENT_TYPE_TEXT);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", "html; charset=utf-8");
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", KEY_CONTENT_LENGHT);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", SP);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%d", nbytes_body);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", KEY_SERVER);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", SP);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", "Juanito Tribalero Trakatero Chebichev");
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
 
     // body
-    offset += snprintf(req_ctx->response + offset, BUFFER_LENGTH - offset, "%s", body);
-    req_ctx->response[offset + 1] = '\0';
+    offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", body);
+    response[offset + 1] = '\0';
 
     return 0;
 }
@@ -207,61 +207,27 @@ static httpmethod get_method_handler(const char *httpmethod)
     return UNKNOWN;
 }
 
-static int handle_method(httpmethod method, request_ctx *req_ctx)
+static int handle_method(char *response, request_parsed *req_p)
 {
+    /*
+    need a function pointer to the right handle_method function
+    */
+    httpmethod method = get_method_handler(req_p->method);
     if (method < UNKNOWN)
     {
-        handlers[method](req_ctx);
+        handlers[method](response, req_p);
     }
     return -1;
 }
 
-/*
-TODO: Use struct request_parsed instead of **lines
-*/
-static int handle_request(char *response, char *lines[])
+static int handle_request(char *response, request_parsed *req_parsed)
 {
-
-    if (lines[0] == NULL)
+    if (req_parsed == NULL || response == NULL)
     {
         print_and_keep_going("Server", "Handle request");
         return -1;
     }
-
-    printf("lines[0]: %s\n", lines[0]);
-
-    // create duplicate of first line
-    //(strtok operates on the same string)
-    size_t fllenght = strlen(lines[0]);
-    char *first_line = (char *)malloc(fllenght + 1);
-    if (first_line == NULL)
-    {
-        print_and_keep_going("Server", "Handle request");
-        return -1;
-    }
-    memcpy(first_line, lines[0], fllenght + 1);
-    printf("first_line: %s\n", first_line);
-
-    char *token = strtok(first_line, SP);
-
-    /*
-    need a function pointer to the right handle_method function
-    */
-
-    httpmethod method = get_method_handler(token);
-
-    request_ctx req_ctx;
-    req_ctx.response = response;
-    char *resource = strtok(NULL, SP);
-    req_ctx.resource = resource;
-    char *http_version = strtok(NULL, SP);
-    req_ctx.http_version = http_version;
-
-    int whappend = handle_method(method, &req_ctx);
-
-    free(first_line);
-
-    return whappend;
+    return handle_method(response, req_parsed);
 }
 
 void handle_child(int server_fd, server_ctx *server)
@@ -302,13 +268,12 @@ void handle_child(int server_fd, server_ctx *server)
     printf("Using other tokenizer function:\n");
     request_parsed req_parsed;
     parse_request(buffer_stream, strlen(buffer_stream), &req_parsed);
-    printf("req_parsed->request_line: %s\n", req_parsed.request_line);
     printf("req_parsed->body: %s\n", req_parsed.body);
 
     char response[BUFFER_LENGTH];
 
     // TODO: Use struct request_parsed instead of **lines
-    handle_request(response, lines); // gotta pass size of array
+    handle_request(response, &req_parsed);
 
     send(client_conn, response, sizeof response, 0);
     printf("Msg sent\n");

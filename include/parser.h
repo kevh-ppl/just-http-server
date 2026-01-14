@@ -11,7 +11,9 @@
 
 typedef struct request_parsed
 {
-    char *request_line;
+    char *method;
+    char *resource;
+    char *http_version;
     char *body;
     char *headers[MAX_HEADERS_LINES_REQUEST];
 } request_parsed;
