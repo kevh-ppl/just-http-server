@@ -290,8 +290,12 @@ void handle_child(int server_fd, server_ctx *server)
     memcpy(req_parsed.raw, buffer_stream, n);
     req_parsed.raw[n] = '\0';
 
-    parse_request(&req_parsed);
-    // printf("req_parsed->body: %s\n", req_parsed.body);
+    int result_parsing = parse_request(&req_parsed);
+    if (result_parsing < 0)
+    {
+        close(client_conn);
+        kill_child();
+    }
 
     char response[BUFFER_LENGTH];
 
