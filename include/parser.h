@@ -11,6 +11,7 @@
 
 typedef struct request_parsed
 {
+    char raw[BUFFER_LENGTH];
     char *method;
     char *resource;
     char *http_version;
@@ -19,6 +20,6 @@ typedef struct request_parsed
 } request_parsed;
 
 void tokenization_by_crlf(const char *request, size_t req_str_len, char *lines[], int maxTokens);
-void parse_request(const char *request, size_t req_str_len, request_parsed *req_parsed);
+int parse_request(request_parsed *req_parsed);
 
 #endif

@@ -6,6 +6,7 @@
 
 #include "parser.h"
 #include "standard.h"
+#include "utils.h"
 
 void tokenization_by_crlf(const char *request, size_t req_str_len, char *lines[], int maxTokens)
 {
@@ -29,35 +30,83 @@ void tokenization_by_crlf(const char *request, size_t req_str_len, char *lines[]
     printf("First line of request:\n\t%s\n", lines[0]);
 }
 
-void parse_request(const char *request, size_t req_str_len, request_parsed *req_parsed)
+/*
+ * First tokenization by '\r\n\r\n',
+ * so Body is separated from the rest of the request.
+ * Second tokenization by '\r\n',
+ * so we separate each header.
+ * Third tokenization by ' ', so we separate Method, Resource and Version.
+ *
+ */
+int parse_request(request_parsed *req_parsed)
 {
-    char request_cpy[BUFFER_LENGTH] = {0};
-    ssize_t nbytes_to_cpy = req_str_len < sizeof(request_cpy) - 1 ? req_str_len : sizeof(req_str_len) - 1;
-    memcpy(request_cpy, request, nbytes_to_cpy);
+    // body is 4 memory addresses ahead of the pointer that strstr return
+    char *headers_separates_body = strstr(req_parsed->raw, "\r\n\r\n"); // CRLFCRLF
 
-    char *first_line_token = strtok(request_cpy, SP);
-    req_parsed->method = first_line_token;
-    first_line_token = strtok(NULL, SP);
-    req_parsed->resource = first_line_token;
-    first_line_token = strtok(NULL, SP);
-    req_parsed->http_version = first_line_token;
-
-    char *token = strtok(request_cpy, CRLF);
-    token = strtok(NULL, CRLF);
-
-    int index = 0;
-    while (token != NULL && index < MAX_HEADERS_LINES_REQUEST - 1) // -1 because gotta do a on purpose NULL pointer at the end
+    if (headers_separates_body == NULL)
     {
-        if (strcmp(token, CRLF) == 0) // ignore body for now
+        // return 400;
+        print_and_keep_going("Parser", "Error 400 Bad Request");
+        return -1;
+    }
+
+    char *body = headers_separates_body + 4;
+    req_parsed->body = body;
+
+    // request line
+    char *p = req_parsed->raw;
+    char *q;
+    q = strstr(p, "\r\n");
+    if (q == NULL)
+    {
+        // return 400;
+        print_and_keep_going("Parser", "Error 400 Bad Request");
+        return -1;
+    }
+    *q = '\0';
+
+    char *request_line = p;
+
+    p = q + 2;
+
+    char *save;
+    req_parsed->method = strtok_r(request_line, SP, &save);
+    if (req_parsed->method == NULL)
+    {
+        // return 400;
+        print_and_keep_going("Parser", "Error 400 Bad Request");
+        return -1;
+    }
+
+    req_parsed->resource = strtok_r(NULL, SP, &save);
+    if (req_parsed->resource == NULL)
+    {
+        // return 400;
+        print_and_keep_going("Parser", "Error 400 Bad Request");
+        return -1;
+    }
+
+    req_parsed->http_version = strtok_r(NULL, SP, &save);
+    if (req_parsed->http_version == NULL)
+    {
+        // return 400;
+        print_and_keep_going("Parser", "Error 400 Bad Request");
+        return -1;
+    }
+
+    // request line
+
+    int n = 0;
+    while (p < headers_separates_body && n < MAX_HEADERS_LINES_REQUEST)
+    {
+        q = strstr(p, "\r\n");
+        if (q == NULL)
             break;
+        *q = '\0';
 
-        token = strtok(NULL, CRLF);
-        req_parsed->headers[index] = token;
+        req_parsed->headers[n++] = p;
+        p = q + 2;
     }
 
-    while (token != NULL)
-    {
-        token = strtok(NULL, CRLF);
-        req_parsed->body = token;
-    }
+      return 0;
 }

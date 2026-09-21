@@ -237,6 +237,7 @@ static int handle_request(char *response, request_parsed *req_parsed)
 
 static void init_request_parsed(request_parsed *req_p)
 {
+    req_p->raw[0] = '\0';
     req_p->method = NULL;
     req_p->resource = NULL;
     req_p->http_version = NULL;
@@ -284,7 +285,12 @@ void handle_child(int server_fd, server_ctx *server)
     // printf("Using other tokenizer function:\n");
     request_parsed req_parsed;
     init_request_parsed(&req_parsed);
-    parse_request(buffer_stream, strlen(buffer_stream), &req_parsed);
+
+    int n = value_read < BUFFER_LENGTH - 1 ? value_read : BUFFER_LENGTH - 1;
+    memcpy(req_parsed.raw, buffer_stream, n);
+    req_parsed.raw[n] = '\0';
+
+    parse_request(&req_parsed);
     // printf("req_parsed->body: %s\n", req_parsed.body);
 
     char response[BUFFER_LENGTH];
