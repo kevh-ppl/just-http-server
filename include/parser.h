@@ -19,7 +19,6 @@ typedef struct request_parsed
     char *headers[MAX_HEADERS_LINES_REQUEST];
 } request_parsed;
 
-void tokenization_by_crlf(const char *request, size_t req_str_len, char *lines[], int maxTokens);
 int parse_request(request_parsed *req_parsed);
 
 #endif
