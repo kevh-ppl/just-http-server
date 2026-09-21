@@ -12,8 +12,10 @@ comportamientos raros.
 **Protocolo**
 
 - Solo `GET`. Si el método es desconocido, `handle_method()` no escribe nada en
-  `response` y se envía el buffer de pila sin inicializar. No hay respuestas
-  404, 501 ni 400: los errores solo se loguean y el cliente recibe basura.
+  `response` y se envía el buffer de pila sin inicializar: un `POST` hoy
+  devuelve 8 KB de ceros. No hay respuestas 501 ni 404. (Una petición mal
+  formada sí se corta limpiamente: `parse_request()` devuelve `-1` y
+  `handle_child` cierra la conexión, pero el cliente no recibe un 400.)
 - `Content-Type` está fijo a `text/html; charset=utf-8`, así que `favicon.ico`
   y cualquier binario se sirven con el tipo equivocado.
 - Una petición = una conexión; no hay keep-alive ni pipelining.
@@ -22,13 +24,6 @@ comportamientos raros.
 
 **Memoria y corrección**
 
-- `request_parsed` apunta a un buffer local de `parse_request()`, que deja de
-  existir al volver. Que hoy funcione es casualidad del layout de la pila; hay
-  que copiar los tokens (o parsear sobre el buffer del llamador).
-- El bucle de cabeceras de `parse_request()` nunca incrementa `index`, así que
-  todas las cabeceras van a parar a `headers[0]`.
-- En el cálculo de bytes a copiar se usa `sizeof(req_str_len) - 1` (7, el tamaño
-  del `size_t`) en la rama del `else`, en lugar del tamaño del buffer.
 - El body se lee sin terminador y luego se formatea con `%s`, de modo que
   `snprintf` lee más allá del buffer; además `response[offset + 1] = '\0'` deja
   el byte en `offset` sin escribir.
@@ -51,7 +46,9 @@ comportamientos raros.
 
 ## Siguientes pasos
 
-- [ ] Hacer que `request_parsed` sea dueño de sus strings.
+- [x] Hacer que `request_parsed` sea dueño de sus strings. (`raw[BUFFER_LENGTH]`
+      dentro del struct, parseo con `strstr`/`strtok_r`, `parse_request()`
+      devuelve `int`.)
 - [ ] Respuestas de error reales (400 / 404 / 501) con un handler genérico.
 - [ ] `Content-Type` por extensión.
 - [ ] Normalizar la ruta y rechazar cualquier cosa que escape de `www/`.

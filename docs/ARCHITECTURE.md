@@ -61,21 +61,38 @@ el único punto de bloqueo deseado, el flag rompía el flujo.
 
 ```c
 typedef struct request_parsed {
-    char *method;        // "GET"
-    char *resource;      // "/index.html"
-    char *http_version;  // "HTTP/1.1"
+    char raw[BUFFER_LENGTH];  // copia de la petición; el struct es su dueño
+    char *method;             // "GET"
+    char *resource;           // "/index.html"
+    char *http_version;       // "HTTP/1.1"
     char *body;
     char *headers[MAX_HEADERS_LINES_REQUEST]; // 50
 } request_parsed;
 ```
 
-`parse_request()` copia el stream a un buffer local y lo trocea con `strtok()`:
-primero por `SP` para la request line (método, recurso, versión) y luego por
-`CRLF` para las cabeceras. Los campos del struct son **punteros al buffer local
-de `parse_request()`**, no copias.
+**El struct es dueño de sus bytes.** `handle_child()` copia el buffer de `read()`
+en `raw` (usando `value_read`, no `strlen`, para no cortar en un `'\0'`), y todos
+los `char *` del struct apuntan dentro de `raw`. No hay asignaciones sueltas ni
+nada que liberar: la vida de los campos es la vida del struct.
 
-`tokenization_by_crlf()` es la versión anterior del troceador; ya no la llama
-nadie, queda como referencia.
+`parse_request(request_parsed *)` trocea `raw` en sitio, en este orden:
+
+1. `strstr(raw, "\r\n\r\n")` localiza el fin de las cabeceras; `body` es eso + 4.
+2. La primera línea se corta por su `\r\n` y se parte con `strtok_r` por espacios
+   → `method`, `resource`, `http_version`.
+3. El resto se recorre línea a línea con `strstr(p, "\r\n")`, escribiendo `'\0'`
+   en cada terminador, hasta llegar al límite de las cabeceras o a las 50 líneas.
+
+Devuelve `0`, o `-1` si la petición está mal formada (sin `\r\n\r\n`, o con una
+request line incompleta). `handle_child()` comprueba ese retorno y cierra la
+conexión sin responder — pendiente convertirlo en un 400, ver [TODO.md](../TODO.md).
+
+Nota sobre `strtok`: el segundo argumento es un **conjunto de caracteres**, no una
+secuencia, así que `strtok(s, "\r\n")` trocea por CR o LF indistintamente y
+colapsa delimitadores consecutivos — con lo cual la línea en blanco que separa
+cabeceras de body es invisible. Por eso el parseo por líneas usa `strstr` y no
+`strtok`. Para partir la request line, donde el delimitador sí es un solo
+carácter, se usa `strtok_r` (la variante reentrante, sin estado global).
 
 ## Generación de la respuesta
 
