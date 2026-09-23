@@ -251,24 +251,41 @@ static void init_request_parsed(request_parsed *req_p)
 
 void handle_child(int server_fd, server_ctx *server)
 {
-    pid_t pid = fork();
-    if (pid > 0)
-    {
-        return;
-    }
 
-    // handle client connection
-    ssize_t value_read;
-    char buffer_stream[BUFFER_LENGTH] = {0};
-    int client_conn;
-
-    // well, I undertand (may be wrong) that accept() waits for a conn, creates a new socket if there's any
+    // well, I undertand (may be wrong) that accept() waits for a conn,
+    // creates a new socket if there's any
     // and then returns a fd to that new socket to communicate to the client.
+    int client_conn;
     if ((client_conn = accept(server_fd, (struct sockaddr *)server->address, &server->addr_len)) < 0)
     {
         print_and_keep_going("Server child", "Error accepting connection...\n");
         return;
     };
+
+    pid_t pid = fork();
+    if (pid == -1)
+    {
+        print_and_keep_going("Server child", "Error forking process");
+        close(client_conn);
+        return;
+    }
+
+    if (pid > 0) // parent process continues here
+    {
+        /*
+        Parent needs to close the client connection so the child never becomes
+        a zombie staying at the processes table.
+        */
+        close(client_conn);
+        return;
+    }
+
+    // child does not need the listening connection
+    close(server_fd);
+
+    // handle client connection
+    ssize_t value_read;
+    char buffer_stream[BUFFER_LENGTH] = {0};
 
     // TODO: use shutdown()-drain-close() technique
     value_read = read(client_conn, buffer_stream, BUFFER_LENGTH - 1); //-1 because EOF
