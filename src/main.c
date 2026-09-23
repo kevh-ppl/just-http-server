@@ -3,6 +3,7 @@
 #include <unistd.h> //read
 #include <string.h> //strlen
 #include <poll.h>   //instead of select()
+#include <signal.h>
 #include <sys/socket.h>
 
 #include "utils.h"
@@ -46,6 +47,8 @@ int main()
     // so when theres an incoming connections, an readiable event is issued and accept() can be used
     pfds[0].fd = server_fd;
     pfds[0].events = POLLIN;
+
+    signal(SIGCHLD, SIG_IGN);
 
     while (1)
     {
