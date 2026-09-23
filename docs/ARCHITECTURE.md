@@ -5,15 +5,15 @@ servidor **hace hoy**, no lo que debería hacer.
 
 ## Modelo de concurrencia
 
-Un proceso padre acepta eventos y un proceso hijo por conexión atiende la
-petición ("fork-per-connection", pero con un giro: el `fork()` ocurre *antes*
-del `accept()`).
+Un proceso hijo por conexión ("fork-per-connection"): el padre acepta y delega,
+el hijo atiende la petición entera y muere.
 
 ```
 main()                                   handle_child()            (hijo)
+  signal(SIGCHLD, SIG_IGN)                 accept() -> client_conn
   setup_server() -> server_fd              fork()
-  poll([server_fd], POLLIN, -1) <--+         |  padre: return
-        |                          |         |  hijo:  accept()
+  poll([server_fd], POLLIN, -1) <--+         |  padre: close(client_conn), return
+        |                          |         |  hijo:  close(server_fd)
         v                          |         v         read()
    revents & POLLIN ---------------+      parse_request()
         |                                    handle_request()
@@ -27,17 +27,22 @@ main()                                   handle_child()            (hijo)
   Cuando hay `POLLIN` (conexión pendiente en la backlog queue) llama a
   `handle_child()`. El bucle es `while (1)`, así que el `free()`/`close()` del
   final de `main()` nunca se ejecutan.
-- [src/server.c](../src/server.c) `handle_child()`: hace `fork()`. El padre
-  vuelve de inmediato al `poll()`; el hijo es quien llama a `accept()`, lee la
-  petición, responde, cierra y termina con `kill_child()` (`exit(EXIT_SUCCESS)`).
+- [src/server.c](../src/server.c) `handle_child()`: acepta la conexión y **luego**
+  hace `fork()`. El padre cierra su copia de `client_conn` y vuelve al `poll()`;
+  el hijo cierra `server_fd`, lee, responde, y termina con `kill_child()`.
 
-Dos consecuencias de que el `fork()` vaya antes del `accept()`:
+Dos detalles que no son opcionales en este modelo:
 
-1. El padre vuelve al `poll()` mientras la conexión sigue en la cola, así que
-   `poll()` puede volver a reportar `POLLIN` por la *misma* conexión y forkear
-   hijos de más, que se quedarán bloqueados en `accept()` esperando la siguiente.
-2. El padre nunca hace `wait()`/`waitpid()` ni ignora `SIGCHLD`, así que cada
-   hijo terminado queda como zombi.
+1. **Cada proceso cierra el fd que no le toca.** Tras el `fork()` ambos tienen
+   una copia de los dos descriptores, y un socket no se cierra de verdad hasta
+   que se cierran todas sus copias. Si el padre no soltara `client_conn`, le
+   iría acumulando un fd por conexión y el cliente no vería el cierre limpio.
+2. **`signal(SIGCHLD, SIG_IGN)`** en `main()`: le dice al kernel que no se
+   guarde el estado de salida de los hijos, que es lo que evita los zombis.
+   Se eligió sobre un handler con `waitpid()` porque un handler interrumpiría
+   el `poll()` con `EINTR` cada vez que muere un hijo, y el bucle lo trata hoy
+   como error fatal. Si algún día se añade cualquier handler, hay que tratar
+   `EINTR` en [src/main.c](../src/main.c) antes que nada.
 
 ## Setup del socket
 

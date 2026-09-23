@@ -33,9 +33,6 @@ comportamientos raros.
   `fd_resource` ni liberar `path_to_resource`/`body`.
 - En los errores de `setup_server()` se hace `free(server)` sobre un struct que
   vive en la pila de `main()`; lo que hay que liberar es `server->address`.
-- Zombis: el padre nunca hace `wait()`/`waitpid()` ni ignora `SIGCHLD`, así que
-  cada hijo terminado se queda en la tabla de procesos (ver "Modelo de
-  concurrencia" en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)).
 
 **Seguridad**
 
@@ -53,5 +50,7 @@ comportamientos raros.
 - [ ] `Content-Type` por extensión.
 - [ ] Normalizar la ruta y rechazar cualquier cosa que escape de `www/`.
 - [ ] Enviar solo `offset` bytes y hacer el `send()` en bucle hasta vaciar.
-- [ ] `signal(SIGCHLD, SIG_IGN)` o `waitpid(WNOHANG)` en el padre.
-- [ ] Mover el `fork()` a después del `accept()`.
+- [x] `signal(SIGCHLD, SIG_IGN)` en el padre, para que el kernel recoja a los
+      hijos y no queden zombis.
+- [x] Mover el `fork()` a después del `accept()`. El padre cierra su copia de
+      `client_conn` y el hijo cierra `server_fd`.
