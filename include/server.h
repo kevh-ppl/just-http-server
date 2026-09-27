@@ -2,6 +2,7 @@
 #define SERVER_H
 
 #include "parser.h"
+#include "utils.h"  // server_ctx
 
 #define BUFFER_LENGTH 8192
 #define SERVER_PORT 1313
