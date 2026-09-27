@@ -1,4 +1,4 @@
-#ifndef SERVER_h
+#ifndef SERVER_H
 #define SERVER_H
 
 #include "parser.h"
