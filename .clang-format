@@ -1,0 +1,7 @@
+---
+# Estilo Google. Lo aplica clangd directamente (lleva clang-format incorporado),
+# asi que funciona en Neovim, VSCode y `clang-format` en linea de comandos.
+BasedOnStyle: Google
+Language: Cpp
+IndentWidth: 2
+ColumnLimit: 80
