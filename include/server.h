@@ -1,7 +1,6 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include "parser.h"
 #include "utils.h"  // server_ctx
 
 #define BUFFER_LENGTH 8192
@@ -15,7 +14,5 @@
 
 int setup_server(server_ctx* server);
 void handle_child(int server_fd, server_ctx* server);
-
-typedef int (*handler_method_fn)(char* response, request_parsed* req_p);
 
 #endif
