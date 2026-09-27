@@ -9,11 +9,7 @@
 #define GET "GET"
 #define POST "POST"
 
-typedef enum
-{
-        GET_EN,
-        UNKNOWN_EN
-} httpmethod;
+typedef enum { GET_EN, UNKNOWN_EN } httpmethod;
 
 #define CODE_OK "200"
 #define STATUS_OK "OK"

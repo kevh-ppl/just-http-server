@@ -13,9 +13,9 @@
 #define INDEX_FILE "index.html"
 #define LEN_INDEX_FILE strlen(INDEX_FILE)
 
-int setup_server(server_ctx *server);
-void handle_child(int server_fd, server_ctx *server);
+int setup_server(server_ctx* server);
+void handle_child(int server_fd, server_ctx* server);
 
-typedef int (*handler_method_fn)(char *response, request_parsed *req_p);
+typedef int (*handler_method_fn)(char* response, request_parsed* req_p);
 
 #endif
