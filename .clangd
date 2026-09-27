@@ -1,0 +1,12 @@
+# Los flags de los .c vienen de compile_commands.json (make compile_commands.json).
+# Este bloque cubre los headers de include/, que no aparecen en esa base de datos.
+CompileFlags:
+  Add:
+    - -std=gnu17
+    - -Wall
+    - -Wextra
+    - -pedantic
+
+Diagnostics:
+  UnusedIncludes: Strict
+  MissingIncludes: Strict
