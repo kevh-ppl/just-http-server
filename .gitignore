@@ -4,3 +4,5 @@
 
 output/
 server
+
+compile_commands.json
