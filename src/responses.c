@@ -13,32 +13,18 @@
 #include "standard.h"
 #include "utils.h"
 
-static int handle_get(char* response, request_parsed* req_p);
+static int handle_get(request_parsed* req_p, response* out);
 static handler_method_fn handlers[] = {
     [GET_EN] = handle_get,
     [UNKNOWN_EN] = NULL,
 };
 
-static int handle_get(char* response, request_parsed* req_p) {
+static int handle_get(request_parsed* req_p, response* out) {
   if (req_p->resource == NULL || req_p->http_version == NULL) {
     print_and_keep_going("Server",
                          "Either resource or http version not provided");
     return -1;
   }
-  // printf("Handling GET request with %s and %s\n", req_p->resource,
-  // req_p->http_version);
-
-  /*
-  first i gotta check for the resource
-  if it does not exists, return a 404 NOT FOUND response
-
-  i can read first the file, see how many bytes it is,
-  then allocate just that and read again
-
-  first / gotta be replaced with BASE_PATH_WWW
-
-  "./web" + resource -> Just gotta do a strcat
-  */
 
   char* path_to_resource;
   if (strcmp(req_p->resource, "/") == 0) {
@@ -71,74 +57,56 @@ static int handle_get(char* response, request_parsed* req_p) {
   struct stat stbuf;
   if (stat(path_to_resource, &stbuf) == -1) {
     print_and_keep_going("Server", "Error doing stat for path to resource");
+    free(path_to_resource);
     return -1;
   }
 
   if (!S_ISREG(stbuf.st_mode)) {
     print_and_keep_going("Server", "Not a regular file");
+    free(path_to_resource);
     return -1;
   }
   int fd_resource = open(path_to_resource, O_RDONLY);
+  free(path_to_resource);
   if (fd_resource == -1) {
     print_and_keep_going("Server", "Error opening resource");
     return -1;
   }
 
-  char* body = (char*)malloc((int64_t)stbuf.st_size);
-  // printf("st_size: %" PRId64 "\n", stbuf.st_size);
-  if (body == NULL) {
-    print_and_keep_going("Server", "Error allocating memory for body response");
+  // Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+  // then headers, an empty line and the body
+  char header[BUFFER_LENGTH];
+  int header_len = snprintf(header, sizeof header,
+                            "%s" SP CODE_OK SP STATUS_OK CRLF KEY_CONTENT_TYPE
+                                SP VALUE_CONTENT_TYPE_TEXT
+                            "html; charset=utf-8" CRLF KEY_CONTENT_LENGHT SP
+                            "%" PRId64 CRLF KEY_SERVER SP
+                            "Juanito Tribalero Trakatero Chebichev" CRLF CRLF,
+                            HTTP_VERSION, (int64_t)stbuf.st_size);
+  if (header_len < 0 || (size_t)header_len >= sizeof header) {
+    print_and_keep_going("Server", "Error building response headers");
+    close(fd_resource);
     return -1;
   }
 
-  int nbytes_body = read(fd_resource, body, (int64_t)stbuf.st_size);
-  if (nbytes_body == -1) {
+  // one allocation for headers + body, body is read right after the headers
+  out->response = (char*)malloc(header_len + stbuf.st_size);
+  if (out->response == NULL) {
+    print_and_keep_going("Server", "Error allocating memory for response");
+    close(fd_resource);
+    return -1;
+  }
+  memcpy(out->response, header, header_len);
+
+  ssize_t nbytes_body =
+      read(fd_resource, out->response + header_len, stbuf.st_size);
+  close(fd_resource);
+  if (nbytes_body != stbuf.st_size) {
     print_and_keep_going("Server", "Error reading resource");
     return -1;
   }
 
-  // printf("nbytes_read: %d\n", nbytes_body);
-  //  at this point i can assamble the response with status 200
-  //  Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
-
-  int offset;
-  offset = snprintf(response, BUFFER_LENGTH, "%s", HTTP_VERSION);
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", SP);
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", CODE_OK);
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", SP);
-  offset +=
-      snprintf(response + offset, BUFFER_LENGTH - offset, "%s", STATUS_OK);
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
-
-  // headers
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s",
-                     KEY_CONTENT_TYPE);
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", SP);
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s",
-                     VALUE_CONTENT_TYPE_TEXT);
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s",
-                     "html; charset=utf-8");
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s",
-                     KEY_CONTENT_LENGHT);
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", SP);
-  offset +=
-      snprintf(response + offset, BUFFER_LENGTH - offset, "%d", nbytes_body);
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
-  offset +=
-      snprintf(response + offset, BUFFER_LENGTH - offset, "%s", KEY_SERVER);
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", SP);
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s",
-                     "Juanito Tribalero Trakatero Chebichev");
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", CRLF);
-
-  // body
-  offset += snprintf(response + offset, BUFFER_LENGTH - offset, "%s", body);
-  response[offset + 1] = '\0';
-
-  free(path_to_resource);
-  free(body);
+  out->len = header_len + nbytes_body;
   return 0;
 }
 
@@ -149,37 +117,33 @@ static httpmethod get_method_handler(char* httpmethod) {
   return UNKNOWN_EN;  // 501 Not Inplemented
 }
 
-static int handle_method(char* response, request_parsed* req_p) {
-  /*
-  need a function pointer to the right handle_method function
-  */
+static int handle_method(request_parsed* req_p, response* out) {
   httpmethod method = get_method_handler(req_p->method);
   if (method < UNKNOWN_EN) {
-    handlers[method](response, req_p);
+    return handlers[method](req_p, out);
   }
-  return -1;
+  return -1;  // TODO: 501 Not Implemented
 }
 
-int handle_request(char* response, request_parsed* req_parsed) {
-  if (req_parsed == NULL || response == NULL) {
+int handle_request(request_parsed* req_p, response* out) {
+  if (req_p == NULL || out == NULL) {
     print_and_keep_going("Server", "Handle request");
     return -1;
   }
-  return handle_method(response, req_parsed);
+  out->response = NULL;
+  out->len = 0;
+  return handle_method(req_p, out);
+}
+
+void free_response(response* r) {
+  if (r == NULL) return;
+  free(r->response);
+  r->response = NULL;
+  r->len = 0;
 }
 
 /*
- * COMPLETAR
- *
- * */
-char* build_response(server_ctx server_ctx) {
-  char* response = NULL;
-
-  return response;
-}
-
-/*
- * COMPLETAR
+ * TODO: COMPLETAR
  * Just sends the response string through the network
  * */
 int send_response(char* response) { return 0; }

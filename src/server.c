@@ -4,6 +4,7 @@
 #include <netinet/in.h>  //htons to flip endianess
 #include <stdlib.h>
 #include <string.h>  //stderror(), strlen()
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include "parser.h"
@@ -147,12 +148,11 @@ void handle_child(int server_fd, server_ctx* server) {
     kill_child();
   }
 
-  char response[BUFFER_LENGTH];
-
-  // TODO: Use struct request_parsed instead of **lines
-  handle_request(response, &req_parsed);
-
-  send(client_conn, response, sizeof response, 0);
+  response res;
+  if (handle_request(&req_parsed, &res) == 0) {
+    send(client_conn, res.response, res.len, 0);
+  }
+  free_response(&res);
   // printf("Msg sent\n");
   // printf("=============================================\n");
 
