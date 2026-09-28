@@ -1,11 +1,123 @@
 <!DOCTYPE html>
 <html lang="es">
   <head>
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <meta charset="utf-8" />
-    <title>Working</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <title>Traka</title>
+    <!-- Estilos inline: el servidor sirve todo como text/html, un .css aparte seria rechazado -->
+    <style>
+      :root {
+        --bg: #f6f5f1;
+        --fg: #1d1d1b;
+        --muted: #6b6a64;
+        --card: #ffffff;
+        --border: #e2e0d8;
+        --accent: #1f8a5b;
+        --code-bg: #1d1d1b;
+        --code-fg: #e8e6df;
+        --code-key: #8fd3b0;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #121211;
+          --fg: #ecebe6;
+          --muted: #9a998f;
+          --card: #1b1b19;
+          --border: #2c2c29;
+          --accent: #4fc48d;
+          --code-bg: #0b0b0a;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px 16px;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      main { width: 100%; max-width: 560px; }
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font: 600 13px ui-monospace, "SF Mono", Menlo, monospace;
+        color: var(--accent);
+        letter-spacing: 0.04em;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        animation: pulse 2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        50% { opacity: 0.35; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .dot { animation: none; }
+      }
+      h1 {
+        margin: 12px 0 4px;
+        font-size: clamp(48px, 12vw, 72px);
+        line-height: 1;
+        letter-spacing: -0.03em;
+      }
+      .lead { margin: 0 0 28px; color: var(--muted); }
+      pre {
+        margin: 0;
+        padding: 18px 20px;
+        overflow-x: auto;
+        border-radius: 10px;
+        background: var(--code-bg);
+        color: var(--code-fg);
+        font: 13.5px/1.7 ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      .k { color: var(--code-key); }
+      .c { color: #8a887f; }
+      ul {
+        list-style: none;
+        margin: 24px 0 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+      }
+      li {
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--card);
+        font-size: 14px;
+      }
+      li b { display: block; font-size: 13px; color: var(--muted); font-weight: 500; }
+      footer { margin-top: 28px; font-size: 13px; color: var(--muted); }
+      code { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+    </style>
   </head>
   <body>
-    <h2>Traka</h2>
+    <main>
+      <span class="status"><span class="dot"></span>200 OK</span>
+      <h1>Traka</h1>
+      <p class="lead">Un servidor HTTP escrito a mano en C. Si ves esto, funciona.</p>
+
+      <pre><span class="c">$ curl -i localhost:1313/</span>
+HTTP/1.1 200 OK
+<span class="k">Content-Type:</span> text/html; charset=utf-8
+<span class="k">Server:</span> Juanito Tribalero Trakatero Chebichev</pre>
+
+      <ul>
+        <li><b>Lenguaje</b>C, sin dependencias</li>
+        <li><b>Protocolo</b>HTTP/1.1</li>
+        <li><b>Métodos</b><code>GET</code></li>
+      </ul>
+
+      <footer>Servido desde <code>./www</code> · un proceso por conexión</footer>
+    </main>
   </body>
 </html>
