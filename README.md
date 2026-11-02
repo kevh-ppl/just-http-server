@@ -36,6 +36,14 @@ make valgrid   # (sic) --track-origins=yes --show-leak-kinds=all
 
 El binario `./server` está en `.gitignore`, no se commitea.
 
+## LazyVim y clangd
+
+La configuración `.clangd` permite analizar el proyecto sin pasos adicionales.
+Para que clangd use exactamente las opciones del Makefile, genera la base de
+compilación con `make compile_commands.json`. Vuelve a generarla cuando cambies
+las opciones de compilación o añadas archivos fuente. Si LazyVim ya estaba
+abierto, reinicia el servidor LSP o vuelve a abrir el proyecto.
+
 ## Estructura
 
 ```

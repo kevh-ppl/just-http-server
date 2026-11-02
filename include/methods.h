@@ -1,5 +1,5 @@
-#ifndef RESPONSES_H
-#define RESPONSES_H
+#ifndef METHODS_H
+#define METHODS_H
 
 #include <stdio.h>
 

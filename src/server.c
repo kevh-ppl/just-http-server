@@ -7,8 +7,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "methods.h"
 #include "parser.h"
-#include "reponses.h"
 #include "utils.h"
 
 // #include <winsock2.h> // for Windows
