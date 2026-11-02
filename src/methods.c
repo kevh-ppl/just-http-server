@@ -1,5 +1,7 @@
 #include "methods.h"
 
+#include <asm-generic/errno-base.h>
+#include <errno.h>
 #include <fcntl.h>     //open
 #include <inttypes.h>  //PRId64
 #include <stdio.h>
@@ -10,6 +12,7 @@
 #include <unistd.h>
 
 #include "parser.h"
+#include "responses.h"
 #include "server.h"
 #include "standard.h"
 #include "utils.h"
@@ -57,21 +60,31 @@ static int handle_get(request_parsed* req_p, response* out) {
 
   struct stat stbuf;
   if (stat(path_to_resource, &stbuf) == -1) {
-    print_and_keep_going("Server", "Error doing stat for path to resource");
+    int stat_errno = errno;  // free() may clobber errno
     free(path_to_resource);
-    return -1;
+    switch (stat_errno) {
+      case ENOTDIR:
+      case ENOENT:
+        return handle_404(out);
+      case EACCES:
+        return handle_403(out);
+      default:
+        print_and_keep_going("Server", "Error doing stat for path to resource");
+        return handle_500(out);
+    }
   }
 
   if (!S_ISREG(stbuf.st_mode)) {
-    print_and_keep_going("Server", "Not a regular file");
+    // directories and special files are not served
     free(path_to_resource);
-    return -1;
+    return handle_404(out);
   }
   int fd_resource = open(path_to_resource, O_RDONLY);
   free(path_to_resource);
   if (fd_resource == -1) {
+    if (errno == EACCES) return handle_403(out);
     print_and_keep_going("Server", "Error opening resource");
-    return -1;
+    return handle_500(out);
   }
 
   // Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
@@ -81,13 +94,12 @@ static int handle_get(request_parsed* req_p, response* out) {
                             "%s" SP CODE_OK SP STATUS_OK CRLF KEY_CONTENT_TYPE
                                 SP VALUE_CONTENT_TYPE_TEXT
                             "html; charset=utf-8" CRLF KEY_CONTENT_LENGHT SP
-                            "%" PRId64 CRLF KEY_SERVER SP
-                            "Juanito Tribalero Trakatero Chebichev" CRLF CRLF,
+                            "%" PRId64 CRLF KEY_SERVER SP SERVER_NAME CRLF CRLF,
                             HTTP_VERSION, (int64_t)stbuf.st_size);
   if (header_len < 0 || (size_t)header_len >= sizeof header) {
     print_and_keep_going("Server", "Error building response headers");
     close(fd_resource);
-    return -1;
+    return handle_500(out);
   }
 
   // one allocation for headers + body, body is read right after the headers
@@ -95,7 +107,7 @@ static int handle_get(request_parsed* req_p, response* out) {
   if (out->response == NULL) {
     print_and_keep_going("Server", "Error allocating memory for response");
     close(fd_resource);
-    return -1;
+    return handle_500(out);
   }
   memcpy(out->response, header, header_len);
 
@@ -104,7 +116,8 @@ static int handle_get(request_parsed* req_p, response* out) {
   close(fd_resource);
   if (nbytes_body != stbuf.st_size) {
     print_and_keep_going("Server", "Error reading resource");
-    return -1;
+    free_response(out);  // drop the partial 200 before building the 500
+    return handle_500(out);
   }
 
   out->len = header_len + nbytes_body;

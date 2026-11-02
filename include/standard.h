@@ -13,11 +13,20 @@ typedef enum { GET_EN, UNKNOWN_EN } httpmethod;
 
 #define CODE_OK "200"
 #define STATUS_OK "OK"
+#define CODE_FORBIDDEN "403"
+#define STATUS_FORBIDDEN "Forbidden"
+#define CODE_NOT_FOUND "404"
+#define STATUS_NOT_FOUND "Not Found"
+#define CODE_INTERNAL_SERVER_ERROR "500"
+#define STATUS_INTERNAL_SERVER_ERROR "Internal Server Error"
 
 // headers
 #define KEY_CONTENT_TYPE "Content-Type:"
 #define KEY_CONTENT_LENGHT "Content-Length:"
 #define KEY_SERVER "Server:"
+#define KEY_CONNECTION "Connection:"
+
+#define SERVER_NAME "Juanito Tribalero Trakatero Chebichev"
 
 // content-types
 #define VALUE_CONTENT_TYPE_TEXT "text/"
