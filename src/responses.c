@@ -38,8 +38,6 @@ static int build_error_response(response* out, char* code, char* msg) {
     return -1;
   }
 
-  printf("First offset: %d\n", offset);
-
   if (strcmp(code, CODE_NOT_FOUND) == 0) {
     printf("It's 404\n");
     // add header "Close"
@@ -50,7 +48,7 @@ static int build_error_response(response* out, char* code, char* msg) {
   header_len += offset;
 
   if (offset < 0 || (size_t)header_len >= BUFFER_LENGTH) {
-    print_and_keep_going("Serveros", "Coñooooo");
+    print_and_keep_going("Server", "Error building response headers");
     return -1;
   }
 
@@ -63,8 +61,6 @@ static int build_error_response(response* out, char* code, char* msg) {
   }
 
   header_len += offset;
-
-  printf("%s\n", header);
 
   out->response = (char*)malloc(header_len);
   if (out->response == NULL) {
