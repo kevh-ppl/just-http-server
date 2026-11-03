@@ -26,6 +26,7 @@ typedef enum { GET_EN, UNKNOWN_EN } httpmethod;
 #define KEY_SERVER "Server:"
 #define KEY_CONNECTION "Connection:"
 
+#define CONNECTION_CLOSE "close"
 #define SERVER_NAME "Juanito Tribalero Trakatero Chebichev"
 
 // content-types
