@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1018">
+  <title>Órbita — observatorio de lo improbable</title>
+  <link rel="icon" href="favicon.ico">
+  <style>
+    :root { color-scheme: dark; --ink: #e6e9ef; --muted: #9aa7b9; --line: #283241; --accent: #c6f28b; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #0b1018; color: var(--ink); font: 15px/1.6 system-ui, sans-serif; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { font: inherit; cursor: pointer; }
+    button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; }
+    .shell { max-width: 1360px; margin: auto; padding: 30px 6vw; }
+    header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 25px; border-bottom: 1px solid var(--line); }
+    .brand { color: var(--ink); text-decoration: none; font-size: 23px; font-weight: 650; letter-spacing: -.06em; }
+    .brand span { display: inline-block; color: var(--accent); margin-right: 10px; }
+    .mono { font: 11px/1.6 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
+    .status { color: var(--muted); }
+    .status::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 9px; }
+    main { display: grid; grid-template-columns: 1fr 1.25fr; align-items: center; gap: 30px; min-height: 650px; }
+    .eyebrow { color: var(--accent); margin: 0 0 24px; }
+    h1 { font-size: clamp(48px, 5.5vw, 80px); line-height: 1.04; font-weight: 450; letter-spacing: -.065em; margin: 0 0 26px; }
+    h1 em { font-family: Georgia, serif; font-weight: 400; color: var(--accent); }
+    .intro { max-width: 350px; color: var(--muted); margin: 0 0 32px; }
+    #discover { padding: 15px 22px; background: var(--accent); color: #14210b; border: 0; border-radius: 5px; font-weight: 650; }
+    #discover:hover { background: #daf9b1; }
+    #discover span { margin-left: 22px; }
+    .hint { color: var(--muted); font-size: 11px; margin-top: 14px; }
+    .universe { position: relative; width: 100%; aspect-ratio: 1; isolation: isolate; }
+    .universe::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse, #1b2b39 0, transparent 65%); }
+    .star { position: absolute; width: 2px; height: 2px; background: #bdd1e8; border-radius: 50%; opacity: .5; }
+    .sun { position: absolute; top: 50%; left: 50%; width: 11%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; background: #fff0b6; box-shadow: 0 0 30px #ffc26677, 0 0 85px #f9ab4122; }
+    .orbit { position: absolute; top: 50%; left: 50%; width: var(--size); aspect-ratio: 1; margin: calc(var(--size) / -2); border: 1px solid #b9cbe018; border-radius: 50%; animation: revolve var(--speed) linear infinite; }
+    .planet { position: absolute; top: 50%; left: 0; width: var(--diameter); aspect-ratio: 1; border-radius: 50%; background: var(--color); box-shadow: inset -5px -3px 7px #0007, 0 0 12px #ffffff0c; transform: translate(-50%, -50%); }
+    .paused .orbit { animation-play-state: paused; }
+    @keyframes revolve { from { rotate: var(--angle); } to { rotate: calc(var(--angle) + 360deg); } }
+    .map-label { position: absolute; bottom: 0; left: 0; color: var(--muted); }
+    #motion { position: absolute; right: 0; bottom: 0; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); background: #0b1018; padding: 7px 12px; font-size: 11px; }
+    .readout { padding: 25px 0; border-top: 1px solid var(--line); }
+    .readout-head { display: flex; align-items: baseline; gap: 18px; margin-bottom: 20px; }
+    h2 { font-size: 22px; font-weight: 500; margin: 0; letter-spacing: -.04em; }
+    #sector { color: var(--muted); }
+    .worlds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .world { border-left: 1px solid var(--line); padding-left: 16px; }
+    .world h3 { font-size: 14px; font-weight: 500; margin: 0 0 5px; }
+    .world h3::before { content: ''; display: inline-block; height: 7px; width: 7px; border-radius: 50%; background: var(--color); margin-right: 9px; }
+    .world p { color: var(--muted); font-size: 12px; margin: 0; }
+    footer { display: flex; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); padding: 20px 0 0; color: var(--muted); font-size: 11px; }
+    footer a { color: inherit; text-underline-offset: 4px; }
+    @media (max-width: 760px) {
+      .shell { padding: 22px 6vw; } .status { font-size: 9px; }
+      main { grid-template-columns: 1fr; gap: 0; min-height: auto; padding-top: 48px; }
+      h1 { font-size: clamp(48px, 10vw, 72px); } .intro { max-width: 420px; }
+      .universe { max-width: 520px; margin: 12px auto 28px; }
+      .worlds { grid-template-columns: 1fr 1fr; row-gap: 24px; }
+      .readout-head, footer { flex-wrap: wrap; gap: 6px 18px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .orbit { animation: none; rotate: var(--angle); } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <a class="brand" href="/" aria-label="Órbita, volver al inicio"><span>◉</span>órbita</a>
+      <span class="status mono">Observatorio de lo improbable</span>
+    </header>
+    <main>
+      <section>
+        <p class="eyebrow mono">Expedición <span id="expedition">001</span> / sin rumbo fijo</p>
+        <h1>Hay todo un<br>universo <em>ahí fuera.</em></h1>
+        <p class="intro">Cuatro mundos. Una estrella. Ningún lugar al que tengas que llegar. Descubre un pequeño rincón del cosmos, creado al azar.</p>
+        <button id="discover" type="button">Descubrir otro sistema <span aria-hidden="true">↗</span></button>
+        <p class="hint">Universos imaginarios. Curiosidad real.</p>
+      </section>
+      <div class="universe" role="group" aria-label="Ilustración del sistema solar imaginario">
+        <div id="sky" aria-hidden="true"></div>
+        <div class="sun" aria-hidden="true"></div>
+        <div id="orbits" aria-hidden="true"></div>
+        <span class="map-label mono">Vista orbital / sin escala</span>
+        <button id="motion" type="button" aria-pressed="false">Pausar órbitas</button>
+      </div>
+    </main>
+    <section class="readout" aria-live="polite" aria-atomic="true">
+      <div class="readout-head"><h2 id="system"></h2><span id="sector" class="mono"></span></div>
+      <div id="worlds" class="worlds"></div>
+    </section>
+    <noscript><p>Activa JavaScript para generar tus sistemas solares.</p></noscript>
+    <footer><span>Hecho de polvo estelar y números aleatorios.</span><a href="/">Volver a la Tierra ↗</a></footer>
+  </div>
+  <script>
+    const pick = values => values[Math.floor(Math.random() * values.length)];
+    const colors = ['#aac6f1', '#ecaa82', '#c6da9c', '#c5acf1', '#e8cd83', '#8dcfc7'];
+    const names = ['Lira', 'Nébula', 'Vega', 'Ícaro', 'Calipso', 'Aura', 'Helia', 'Nimbo'];
+    const terrains = ['Océanos de cristal', 'Desiertos de cobre', 'Bosques de niebla', 'Anillos de hielo', 'Montañas violetas', 'Nubes de amatista', 'Mares de mercurio', 'Dunas de azafrán'];
+    let expedition = 0;
+    const universe = document.querySelector('.universe');
+    const motion = document.querySelector('#motion');
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    function setPaused(paused) {
+      universe.classList.toggle('paused', paused);
+      motion.setAttribute('aria-pressed', String(paused));
+      motion.textContent = paused ? 'Reanudar órbitas' : 'Pausar órbitas';
+    }
+    setPaused(reducedMotion.matches);
+    motion.hidden = reducedMotion.matches;
+    reducedMotion.addEventListener('change', event => {
+      setPaused(event.matches);
+      motion.hidden = event.matches;
+    });
+    motion.addEventListener('click', () => setPaused(!universe.classList.contains('paused')));
+    for (let i = 0; i < 55; i++) {
+      const star = document.createElement('span');
+      star.className = 'star';
+      star.style.left = `${Math.random() * 100}%`;
+      star.style.top = `${Math.random() * 100}%`;
+      document.querySelector('#sky').append(star);
+    }
+    function discover() {
+      expedition++;
+      document.querySelector('#expedition').textContent = String(expedition).padStart(3, '0');
+      document.querySelector('#system').textContent = `Sistema ${pick(names)}-${100 + Math.floor(Math.random() * 900)}`;
+      document.querySelector('#sector').textContent = `A ${(Math.random() * 800 + 20).toFixed(1)} años luz · 4 mundos`;
+      document.querySelector('#orbits').replaceChildren();
+      document.querySelector('#worlds').replaceChildren();
+      const available = [...terrains];
+      for (let i = 0; i < 4; i++) {
+        const color = colors[(expedition + i) % colors.length];
+        const orbit = document.createElement('div');
+        orbit.className = 'orbit';
+        orbit.style.cssText = `--size:${29 + i * 21}%;--speed:${20 + i * 17}s;--angle:${Math.random() * 360}deg;--diameter:${12 + Math.random() * 12}px;--color:${color}`;
+        const planet = document.createElement('span');
+        planet.className = 'planet';
+        orbit.append(planet);
+        document.querySelector('#orbits').append(orbit);
+        const card = document.createElement('article');
+        card.className = 'world';
+        card.style.setProperty('--color', color);
+        const title = document.createElement('h3');
+        title.textContent = `${pick(names)} ${['I', 'II', 'III', 'IV'][i]}`;
+        const detail = document.createElement('p');
+        detail.textContent = available.splice(Math.floor(Math.random() * available.length), 1)[0];
+        const year = document.createElement('p');
+        year.textContent = `Año orbital: ${Math.floor(40 + (i + 1) * 90 + Math.random() * 80)} días`;
+        card.append(title, detail, year);
+        document.querySelector('#worlds').append(card);
+      }
+    }
+    document.querySelector('#discover').addEventListener('click', discover);
+    discover();
+  </script>
+</body>
+</html>
