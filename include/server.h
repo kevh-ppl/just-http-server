@@ -10,6 +10,7 @@
 #define BASE_PATH_WWW "./www"
 #define LEN_BASE_PATH_WWW strlen(BASE_PATH_WWW)
 #define INDEX_FILE "index.html"
+#define ERROR_404_FILE "404.html"
 #define LEN_INDEX_FILE strlen(INDEX_FILE)
 
 int setup_server(server_ctx* server);
