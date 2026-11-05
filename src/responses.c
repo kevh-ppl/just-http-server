@@ -165,6 +165,11 @@ int handle_403(response* out) {
   return build_error_response(out, CODE_FORBIDDEN, STATUS_FORBIDDEN);
 }
 
+int handle_501(response* out) {
+  return build_error_response(out, CODE_NOT_IMPLEMENTED,
+                              STATUS_NOT_IMPLEMENTED);
+}
+
 int handle_200(response* out) {
   return build_error_response(out, CODE_OK, STATUS_OK);
 }

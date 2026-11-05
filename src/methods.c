@@ -136,7 +136,7 @@ static int handle_method(request_parsed* req_p, response* out) {
   if (method < UNKNOWN_EN) {
     return handlers[method](req_p, out);
   }
-  return -1;  // TODO: 501 Not Implemented
+  return handle_501(out);
 }
 
 int handle_request(request_parsed* req_p, response* out) {

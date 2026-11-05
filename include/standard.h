@@ -19,6 +19,8 @@ typedef enum { GET_EN, UNKNOWN_EN } httpmethod;
 #define STATUS_NOT_FOUND "Not Found"
 #define CODE_INTERNAL_SERVER_ERROR "500"
 #define STATUS_INTERNAL_SERVER_ERROR "Internal Server Error"
+#define CODE_NOT_IMPLEMENTED "501"
+#define STATUS_NOT_IMPLEMENTED "Not Implemented"
 
 // headers
 #define KEY_CONTENT_TYPE "Content-Type:"
