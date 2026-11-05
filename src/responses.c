@@ -16,6 +16,37 @@
 #include "standard.h"
 #include "utils.h"
 
+static int get_fd_resource(char* path) {
+  struct stat stbuf;
+  int fd_body = -1;
+  printf("%s\n", path);
+  if (stat(path, &stbuf) == 0 && S_ISREG(stbuf.st_mode)) {
+    // GET FD
+    fd_body = open(path, O_RDONLY);
+
+  } else {
+    int stat_errno = errno;
+    print_and_keep_going("Server", "Error %d doing stat for error 404 page",
+                         stat_errno);
+  }
+  return fd_body;
+}
+
+/*
+ * Never use without get_fd_resource
+ * Returning 0 means that the file does not exists or there was an error.
+ * Not the better solution.
+ */
+static ssize_t get_resource_size(char* path) {
+  struct stat stbuf;
+  if (stat(path, &stbuf) == -1) {
+    print_and_keep_going("Server", "Error %d doing stat for %s", errno, path);
+    return 0;
+  }
+
+  return stbuf.st_size;
+}
+
 static int build_error_response(response* out, char* code, char* msg) {
   if (out == NULL) {
     // send generic 500 resonse at the end of stack trace
@@ -43,7 +74,7 @@ static int build_error_response(response* out, char* code, char* msg) {
     return -1;
   }
 
-  int fd_body;
+  int fd_body = -1;
   if (strcmp(code, CODE_NOT_FOUND) == 0) {
     // add header "Close"
     offset = snprintf(header + header_len, BUFFER_LENGTH - header_len,
@@ -52,26 +83,13 @@ static int build_error_response(response* out, char* code, char* msg) {
     header_len += offset;
 
     // need to reed 404.html harcoded error page.
-    struct stat stbuf;
-    printf(BASE_PATH_WWW "/" ERROR_404_FILE "\n");
-    if (stat(BASE_PATH_WWW "/" ERROR_404_FILE, &stbuf) == 0) {
-      if (S_ISREG(stbuf.st_mode)) {
-        fd_body = open(BASE_PATH_WWW "/" ERROR_404_FILE, O_RDONLY);
-        if (fd_body != -1) {
-          body_len = stbuf.st_size;
+    fd_body = get_fd_resource(BASE_PATH_WWW "/" ERROR_404_FILE);
 
-        } else {
-          print_and_keep_going("Server", "Error %d opening error 404 page");
-        }
-      } else {
-        print_and_keep_going(
-            "Server", "Error %d, not a regular file:  error 404 page", errno);
-      }
-    } else {
-      int stat_errno = errno;
-      print_and_keep_going("Server", "Error %d doing stat for error 404 page",
-                           stat_errno);
+    if (fd_body == -1) {
+      print_and_keep_going("Server", "Error %d opening error 404 page");
     }
+
+    body_len = get_resource_size(BASE_PATH_WWW "/" ERROR_404_FILE);
   }
 
   if (offset < 0 || (size_t)header_len >= BUFFER_LENGTH) {
