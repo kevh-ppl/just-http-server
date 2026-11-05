@@ -92,6 +92,23 @@ static int build_error_response(response* out, char* code, char* msg) {
     body_len = get_resource_size(BASE_PATH_WWW "/" ERROR_404_FILE);
   }
 
+  if (strcmp(code, CODE_FORBIDDEN) == 0) {
+    // add header "Close"
+    offset = snprintf(header + header_len, BUFFER_LENGTH - header_len,
+                      KEY_CONNECTION SP CONNECTION_CLOSE CRLF);
+
+    header_len += offset;
+
+    // need to reed 404.html harcoded error page.
+    fd_body = get_fd_resource(BASE_PATH_WWW "/" ERROR_403_FILE);
+
+    if (fd_body == -1) {
+      print_and_keep_going("Server", "Error %d opening error 403 page");
+    }
+
+    body_len = get_resource_size(BASE_PATH_WWW "/" ERROR_403_FILE);
+  }
+
   if (offset < 0 || (size_t)header_len >= BUFFER_LENGTH) {
     print_and_keep_going("Server", "Error building response headers");
     return -1;
